@@ -37,15 +37,15 @@ pub async fn get_router(
 ) -> Result<()> {
     match cmd.value {
         Some(key) => {
-            let storage_read = storage.read().await;
-            let cache_opt = storage_read.get(key.as_str());
+            let mut storage_write = storage.write().await;
+            let cache_opt = storage_write.get(key.as_str());
 
             match cache_opt {
                 Some(cache) => {
                     if cache.clone().is_expired() {
-                        let mut storage_write = storage.write().await;
                         storage_write.remove(key.as_str());
                         stream.write(b"+expired\r\n").await.unwrap();
+                        return Ok(());
                     }
 
                     let reply_msg = String::from_utf8(cache.value.clone()).unwrap();
