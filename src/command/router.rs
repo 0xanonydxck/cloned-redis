@@ -44,7 +44,7 @@ pub async fn get_router(
                 Some(cache) => {
                     if cache.clone().is_expired() {
                         storage_write.remove(key.as_str());
-                        stream.write(b"+expired\r\n").await.unwrap();
+                        stream.write(b"-1\r\n").await.unwrap();
                         return Ok(());
                     }
 
@@ -59,7 +59,7 @@ pub async fn get_router(
             }
         }
         None => {
-            stream.write(b"+you must provide a key\r\n").await.unwrap();
+            stream.write(b"-1\r\n").await.unwrap();
         }
     }
 
