@@ -9,6 +9,7 @@ pub const PING_ROUTER: &str = "PING";
 pub const ECHO_ROUTER: &str = "ECHO";
 pub const SET_ROUTER: &str = "SET";
 pub const GET_ROUTER: &str = "GET";
+pub const CONFIG_ROUTER: &str = "CONFIG";
 
 pub async fn ping_router(stream: &mut TcpStream) -> Result<()> {
     stream.write(b"+PONG\r\n").await.unwrap();
@@ -44,7 +45,7 @@ pub async fn get_router(
                 Some(cache) => {
                     if cache.clone().is_expired() {
                         storage_write.remove(key.as_str());
-                        stream.write(b"-1\r\n").await.unwrap();
+                        stream.write(b"$-1\r\n").await.unwrap();
                         return Ok(());
                     }
 
@@ -59,7 +60,7 @@ pub async fn get_router(
             }
         }
         None => {
-            stream.write(b"-1\r\n").await.unwrap();
+            stream.write(b"$-1\r\n").await.unwrap();
         }
     }
 
@@ -99,5 +100,37 @@ pub async fn set_router(
 
     storage_write.insert(cmd.key.unwrap(), data);
     stream.write(b"+OK\r\n").await.unwrap();
+    Ok(())
+}
+
+pub async fn config_router(
+    stream: &mut TcpStream,
+    state: Arc<RwLock<State>>,
+    cmd: Command,
+) -> Result<()> {
+    let state_read = state.read().await;
+    match cmd.value.unwrap_or("".to_string()).as_str() {
+        "dir" => {
+            let reply = format!(
+                "*2\r\n$3\r\ndir\r\n${}\r\n{}\r\n",
+                state_read.directory.len(),
+                state_read.directory
+            );
+
+            stream.write(reply.as_bytes()).await.unwrap();
+        }
+        "dbfilename" => {
+            let reply = format!(
+                "*2\r\n$3\r\ndir\r\n${}\r\n{}\r\n",
+                state_read.filename.len(),
+                state_read.filename
+            );
+
+            stream.write(reply.as_bytes()).await.unwrap();
+        }
+        _ => {
+            stream.write(b"$-1\r\n").await.unwrap();
+        }
+    }
     Ok(())
 }

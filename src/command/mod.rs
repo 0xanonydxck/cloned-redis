@@ -2,8 +2,8 @@ use std::{collections::HashMap, sync::Arc};
 
 use cmd::Command;
 use router::{
-    echo_router, get_router, ping_router, set_router, ECHO_ROUTER, GET_ROUTER, PING_ROUTER,
-    SET_ROUTER,
+    config_router, echo_router, get_router, ping_router, set_router, CONFIG_ROUTER, ECHO_ROUTER,
+    GET_ROUTER, PING_ROUTER, SET_ROUTER,
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -11,7 +11,7 @@ use tokio::{
     sync::RwLock,
 };
 
-use crate::storage::CacheData;
+use crate::{state::State, storage::CacheData};
 
 pub mod cmd;
 pub mod router;
@@ -20,6 +20,7 @@ const MESSAGE_SIZE: usize = 1024;
 
 pub async fn process_stream(
     mut stream: TcpStream,
+    state: Arc<RwLock<State>>,
     storage: Arc<RwLock<HashMap<String, CacheData>>>,
 ) {
     let mut buf = [0; MESSAGE_SIZE];
@@ -31,7 +32,7 @@ pub async fn process_stream(
         }
 
         let message = String::from_utf8(buf.to_vec()).unwrap();
-        command_routing(&mut stream, storage.clone(), message)
+        command_routing(&mut stream, state.clone(), storage.clone(), message)
             .await
             .unwrap();
 
@@ -41,6 +42,7 @@ pub async fn process_stream(
 
 async fn command_routing(
     stream: &mut TcpStream,
+    state: Arc<RwLock<State>>,
     storage: Arc<RwLock<HashMap<String, CacheData>>>,
     message: String,
 ) -> Result<(), ()> {
@@ -59,6 +61,7 @@ async fn command_routing(
         ECHO_ROUTER => echo_router(stream, cmd).await.unwrap(),
         GET_ROUTER => get_router(stream, storage, cmd).await.unwrap(),
         SET_ROUTER => set_router(stream, storage, cmd).await.unwrap(),
+        CONFIG_ROUTER => config_router(stream, state, cmd).await.unwrap(),
         _ => {
             stream.write(b"+command not found\r\n").await.unwrap();
         }

@@ -22,7 +22,7 @@ impl Command {
         };
 
         match cmd.command.as_str() {
-            SET_ROUTER => {
+            SET_ROUTER | CONFIG_ROUTER => {
                 /*
                     `SET` command structure must include:
                     [*x, $x, cmd, $x, key, $x, value]
