@@ -109,6 +109,8 @@ pub async fn config_router(
     cmd: Command,
 ) -> Result<()> {
     let state_read = state.read().await;
+
+    // TODO - routing (GET, SET, ...)
     match cmd.value.unwrap_or("".to_string()).as_str() {
         "dir" => {
             let reply = format!(

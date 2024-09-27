@@ -1,48 +1,32 @@
 mod command;
-mod service;
 mod state;
 mod storage;
+mod utils;
 
-use std::{collections::HashMap, env, sync::Arc};
-
-use state::State;
+use state::{State, DEFAULT_ADDR, FLAG_ADDR, FLAG_DBFILENAME, FLAG_DIR};
 use storage::CacheData;
+
+use std::{collections::HashMap, sync::Arc};
 use tokio::{net::TcpListener, sync::RwLock};
 
 #[tokio::main]
 async fn main() {
-    let args: Vec<String> = env::args().collect();
+    let args = utils::parse_flag(vec![
+        FLAG_DIR.to_string(),
+        FLAG_DBFILENAME.to_string(),
+        FLAG_ADDR.to_string(),
+    ]);
 
-    // Initialize variables to hold values of --dir and --dbfilename
-    let mut dir = None;
-    let mut dbfilename = None;
-
-    // Iterate over the arguments to find --dir and --dbfilename
-    let mut i = 0;
-    while i < args.len() {
-        match args[i].as_str() {
-            "--dir" => {
-                if i + 1 < args.len() {
-                    dir = Some(args[i + 1].clone());
-                }
-                i += 1; // Skip the next argument since it's the value
-            }
-            "--dbfilename" => {
-                if i + 1 < args.len() {
-                    dbfilename = Some(args[i + 1].clone());
-                }
-                i += 1; // Skip the next argument since it's the value
-            }
-            _ => {}
-        }
-        i += 1;
-    }
-
-    let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
-    let state: Arc<RwLock<State>> = Arc::new(RwLock::new(State::new(dir, dbfilename)));
+    let listener = TcpListener::bind(args.get(FLAG_ADDR).unwrap_or(&DEFAULT_ADDR.to_string()))
+        .await
+        .unwrap();
     let storage: Arc<RwLock<HashMap<String, CacheData>>> = Arc::new(RwLock::new(HashMap::new()));
-    println!("redis server started..");
+    let state: Arc<RwLock<State>> = Arc::new(RwLock::new(State::new(
+        args.get(FLAG_DIR).cloned(),
+        args.get(FLAG_DBFILENAME).cloned(),
+    )));
 
+    println!("redis server started..");
     loop {
         let (stream, _) = listener.accept().await.unwrap();
         let storage_cloned = Arc::clone(&storage);

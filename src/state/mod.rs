@@ -1,3 +1,8 @@
+pub const DEFAULT_ADDR: &str = "127.0.0.1:6379";
+pub const FLAG_DIR: &str = "dir";
+pub const FLAG_DBFILENAME: &str = "dbfilename";
+pub const FLAG_ADDR: &str = "addr";
+
 pub struct State {
     pub directory: String,
     pub filename: String,
