@@ -115,8 +115,8 @@ pub async fn config_router(
         "dir" => {
             let reply = format!(
                 "*2\r\n$3\r\ndir\r\n${}\r\n{}\r\n",
-                state_read.directory.len(),
-                state_read.directory
+                state_read.snapshot.directory.len(),
+                state_read.snapshot.directory
             );
 
             stream.write(reply.as_bytes()).await.unwrap();
@@ -124,8 +124,8 @@ pub async fn config_router(
         "dbfilename" => {
             let reply = format!(
                 "*2\r\n$3\r\ndir\r\n${}\r\n{}\r\n",
-                state_read.filename.len(),
-                state_read.filename
+                state_read.snapshot.filename.len(),
+                state_read.snapshot.filename
             );
 
             stream.write(reply.as_bytes()).await.unwrap();

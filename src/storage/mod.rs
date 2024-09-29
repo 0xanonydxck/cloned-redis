@@ -1,6 +1,8 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-#[derive(Debug, Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CacheData {
     pub value: Vec<u8>,
     pub timestamp: u128,        // unix timestmap in milliseconds unit

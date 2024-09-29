@@ -20,11 +20,23 @@ async fn main() {
     let listener = TcpListener::bind(args.get(FLAG_ADDR).unwrap_or(&DEFAULT_ADDR.to_string()))
         .await
         .unwrap();
-    let storage: Arc<RwLock<HashMap<String, CacheData>>> = Arc::new(RwLock::new(HashMap::new()));
+
     let state: Arc<RwLock<State>> = Arc::new(RwLock::new(State::new(
         args.get(FLAG_DIR).cloned(),
         args.get(FLAG_DBFILENAME).cloned(),
     )));
+
+    let origin_storage = state
+        .read()
+        .await
+        .snapshot
+        .clone()
+        .read_storage()
+        .await
+        .unwrap();
+
+    let storage: Arc<RwLock<HashMap<String, CacheData>>> =
+        Arc::new(RwLock::new(origin_storage.clone()));
 
     println!("redis server started..");
     loop {
